@@ -2,7 +2,7 @@ import React from 'react';
 import SearchBar from '../SearchBar/SearchBar.js';
 import SearchResults from '../SearchResults/SearchResults.js';
 import Playlist from '../Playlist/Playlist.js';
-import Spotify from '../../util/Spotify.js';
+import Spotify from '../../util/Spotify.js'
 import './App.css';
 
 
@@ -34,7 +34,7 @@ class App extends React.Component{
   }
 
   removeTrack(track){
-     let newlist = this.state.playlistTracks.filter(listtrack=>listtrack.id !=track.id);
+     let newlist = this.state.playlistTracks.filter(listtrack=>listtrack.id !==track.id);
      this.setState({playlistTracks: newlist});
   }
 
@@ -49,15 +49,17 @@ class App extends React.Component{
   }
   search(term){
 
-    this.setState({searchResults:Spotify.search(term)});
-  }
+      Spotify.search(term).then(tracks=>{
+        this.setState({searchResults:tracks});
+      });
 
+  }
   render(){
     return(
       <div>
         <h1>Ja<span className="highlight">mmm</span>ing</h1>
         <div className="App">
-          <SearchBar />
+          <SearchBar onSearch={this.search}/>
           <div className="App-playlist">
 
             <SearchResults searchResults={this.state.searchResults} onAdd = {this.addTrack}/>

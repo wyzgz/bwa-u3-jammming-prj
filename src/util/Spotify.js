@@ -1,55 +1,89 @@
 import React from 'react';
+const CLIENT_ID='6b018735a25b45f9964bb3dae0cb2b8a';
+//const REDIRECT_URI = 'http://localhost:3000/';
 
-const clientID = '6b018735a25b45f9964bb3dae0cb2b8a';
-const redirectURI = 'http://lei_jammming.surge.sh';
-let expiresIn = 0;
-let userAccessToken = '';
+const REDIRECT_URI = 'http://lei_jammming.surge.sh';
 
-class Spotify extends React.Component{
+const Spotify = {
+   USER_ACCESS_TOKEN :'',
+   EXPIRESIN : 0,
   getAccessToken(){
-    let url = window.location.href;
-    userAccessToken = /access_token=([^&]*)/.exec(url)[1];
-    expiresIn = /expires_in=([^&]*)/.exec(url)[1];
-    if(userAccessToken && expiresIn){
-      window.setTimeout(() => userAccessToken = '', expiresIn * 1000);
-      window.history.pushState('Access Token', null, '/');
-      return userAccessToken;
+    if(this.USER_ACCESS_TOKEN !== null && this.USER_ACCESS_TOKEN.length>1){
+      return this.USER_ACCESS_TOKEN;
     }else{
-      window.location = `https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=token&scope=playlist-modify-public&redirect_uri=${redirectURI}`
-    }
-  }
+      let url = window.location.href;
+      let userAccessToken = /access_token=([^&]*)/.exec(url);
+      let expiresIn = /expires_in=([^&]*)/.exec(url);
+      if(userAccessToken && expiresIn){
+        this.USER_ACCESS_TOKEN = userAccessToken[1];
+        this.EXPIRESIN = expiresIn[1];
+        //window.setTimeout(() => this.USER_ACCESS_TOKEN = '', this.EXPIRESIN * 1000);
+        //window.history.pushState('Access Token', null, '/');
+        return this.USER_ACCESS_TOKEN;
+      }else{
+        let tokenURI = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&scope=playlist-modify-public&redirect_uri=${REDIRECT_URI}`;
+        window.location = tokenURI;
 
-  savePlaylist(playlistName,trackURIs){
-    if(!playlistName && trackURIs){
-        return;
-    }
-    let headers = {Authorization:`Bearer ${userAccessToken}`};
-     let userID = fetch('https://api.spotify.com/v1/me',{headers:headers})
-          .then(response=>response.json())
-          .then(jsonResponse=>jsonResponse.id);
-      let playlistID = fetch(`https://api.spotify.com/v1/users/${userID}/playlists`,
-            {headers:headers,
-            method:'POST',
-          body:{name:playlistName}})
-          .then(response=>response.json())
-          .then(jsonResponse=>jsonResponse.id);
-
-
-  }
-  search(term){
-    return fetch(`https://accounts.spotify.com/authorize?access_token=${userAccessToken}/https://api.spotify.com/v1/search?type=track&q=TERM`,{
-      headers: {Authorization: `Bearer ${userAccessToken}`}
-    }).then(response=>response.json())
-    .then(jsonResponse=>jsonResponse.map(track=>{
-      return {
-        id: track.id,
-        name:track.name,
-        artist: track.atists[0].name,
-        album: track.album.name,
-        uri: track.uri
       }
-    }));
+    }
+  },
+  search(term){
+    let token = this.getAccessToken();
+    return fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`,
+       {headers: {
+         Authorization: `Bearer ${token}`
+       }}
+            ).then(response=>response.json())
+            .then(data=>{
+              if(data.tracks && data.tracks.items){
+                 let newlist =  data.tracks.items.map(track=>({
+                   id: track.id,
+                   name:track.name,
+                   artist:track.artists[0].name,
+                   album: track.album.name,
+                   uri: track.uri
+                 }));
+                 return newlist;
+              }else{
+                return [];
+              }
+            })
+
+  },
+  savePlaylist(name,trackURIs){
+    if(!name && trackURIs){
+      return;
+    }
+    let token = this.getAccessToken();
+    let headers = {Authorization: `Bearer ${token}` ,
+                  'Content-Type':'application/json'};
+    let userId = '';
+    let playlistID='';
+    fetch('https://api.spotify.com/v1/me',{headers:headers})
+    .then(response=>response.json())
+    .then(data =>{
+      fetch(`/v1/users/${data.id}/playlists`,
+      {headers:headers,
+      metod:'POST',
+
+       body:{
+         name:name
+       }}).then(response=>response.json)
+       .then(data=>{playlistID = data.id})
+
+    });
+
+
+
+
+
   }
+
+
+
+
+
+
 }
 
 export default Spotify;

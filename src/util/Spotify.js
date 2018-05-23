@@ -1,4 +1,3 @@
-import React from 'react';
 const CLIENT_ID='6b018735a25b45f9964bb3dae0cb2b8a';
 //const REDIRECT_URI = 'http://localhost:3000/';
 
@@ -55,21 +54,29 @@ const Spotify = {
       return;
     }
     let token = this.getAccessToken();
-    let headers = {Authorization: `Bearer ${token}` ,
+    const headers = {Authorization: `Bearer ${token}` ,
                   'Content-Type':'application/json'};
+
     let userId = '';
     let playlistID='';
     fetch('https://api.spotify.com/v1/me',{headers:headers})
     .then(response=>response.json())
-    .then(data =>{
-      fetch(`/v1/users/${data.id}/playlists`,
+    .then(user =>{
+      userId = user.id;
+      fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,
       {headers:headers,
-      metod:'POST',
+        method:'POST',
+       body:JSON.stringify({ name: name })
+     }).then(response=>response.json())
+     .then(data=>{
+       playlistID = data.id;
+       fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playlistID}/tracks`,
+       {headers:headers,
+         method: 'POST',
+         body:JSON.stringify({uris: trackURIs})
+       }).then(response=>console.log(response.json()))
+     })
 
-       body:{
-         name:name
-       }}).then(response=>response.json)
-       .then(data=>{playlistID = data.id})
 
     });
 
